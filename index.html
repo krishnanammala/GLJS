@@ -1,28 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8' />
-    <title></title>
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.css' rel='stylesheet' />
-    <style>
-        body { margin:0; padding:0; }
-        #map { position:absolute; top:0; bottom:0; width:100%; }
-    </style>
+  <meta charset='utf-8' />
+  <title>Hello, Mapping!</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.css' rel='stylesheet' />
+​
+  <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v1.0.0/mapbox-gl-geocoder.js'></script>
+  <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v1.0.0/mapbox-gl-geocoder.css' type='text/css' />
+​
+  <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v1.0.0/mapbox-gl-directions.js'></script>
+  <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v1.0.0/mapbox-gl-directions.css' type='text/css' />
+​
+  <script src='data/markers.js'></script>
+​
+  <style>
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    .mapboxgl-popup {
+      max-width: 400px;
+      font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    }
+    .marker-title {
+      font-weight: 700;
+    }
+    .directions-control.directions-control-inputs {
+      top: 160px;
+    }
+    #menu {
+     position: absolute;
+     left: 50%;
+     margin-left: -100px;
+   }
+  </style>
 </head>
 <body>
-
+​
 <div id='map'></div>
+<div id='menu'>
+    <input id='basic' type='radio' name='rtoggle' value='basic' checked='checked'>
+    <label for='basic'>Basic</label>
+    <input id='streets' type='radio' name='rtoggle' value='streets'>
+    <label for='streets'>Streets</label>
+    <input id='emerald' type='radio' name='rtoggle' value='emerald'>
+    <label for='emerald'>Wmerald</label>
+    <input id='bright' type='radio' name='rtoggle' value='bright'>
+    <label for='bright'>Bright</label>
+    <input id='light' type='radio' name='rtoggle' value='light'>
+    <label for='light'>Light</label>
+    <input id='dark' type='radio' name='rtoggle' value='dark'>
+    <label for='dark'>Dark</label>
+    <input id='satellite' type='radio' name='rtoggle' value='satellite'>
+    <label for='satellite'>Satellite</label>
+</div>
+​
 <script>
+var markerSource = {
+  "type": "geojson",
+  "data": markers
+};
+
+var markerLayer = {
+  "id": "markers",
+  "type": "symbol",
+  "source": "markers",
+  "layout": {
+    "icon-image": "marker-15",
+    "icon-allow-overlap": true
+  },
+  "interactive": true
+};
 mapboxgl.accessToken = 'pk.eyJ1IjoibmFtbWFsYSIsImEiOiJiMmI0ZDA1ZTQ2ZmFkNjI2NTY5ZDQ4ZTJhNGQ3OTRlOSJ9.S-SfYN0pDqNwzgFwbSGrhg';
 var map = new mapboxgl.Map({
-    container: 'map', // container id
-    style: 'mapbox://styles/nammala/cim1v492q00n0ccm357fjp2ly', //stylesheet location
-    center: [83.32215, 17.72922], // starting position
-    zoom: 15 // starting zoom
+    container: 'map',
+    style: 'mapbox://styles/nammala/cim1v492q00n0ccm357fjp2ly',
+    center: [83.32215, 17.72922],
+    zoom: 13,
+    hash: true
 });
-</script>
+var layerList = document.getElementById('menu');
+var inputs = layerList.getElementsByTagName('input');
+function switchLayer(layer) {
+    var layerId = layer.target.id;
+    map.setStyle('mapbox://styles/mapbox/' + layerId + '-v8');
+}
+for (var i = 0; i < inputs.length; i++) {
+    inputs[i].onclick = switchLayer;
+}
+map.on('style.load', function() {
+  map.setCenter([83.32215, 17.72922]);
+  map.addSource("markers", markerSource);
+  map.addLayer(markerLayer);
+});
+map.setZoom(13);
 
+var popup = new mapboxgl.Popup();
+
+map.on('mousemove', function(e) {
+  map.featuresAt(e.point, {
+      radius: 7.5,
+      includeGeometry: true,
+      layer: 'markers'
+  }, function(err, features) {
+    map.getCanvas().style.cursor = (!err && features.length) ? 'pointer' : '';
+    if (err || !features.length) {
+      popup.remove();
+      return;
+    }
+    var feature = features[0];
+    popup.setLngLat(feature.geometry.coordinates)
+      .setHTML(feature.properties.name)
+      .addTo(map);
+  });
+});
+map.addControl(new mapboxgl.Geocoder());
+map.addControl(new mapboxgl.Directions());
+</script>
+​
 </body>
 </html>
